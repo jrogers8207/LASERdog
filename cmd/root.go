@@ -27,6 +27,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var cfgFile string
@@ -64,6 +66,7 @@ func init() {
 	rootCmd.AddCommand(workspace.WorkspaceCmd)
 
 	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(initLogger)
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
@@ -88,7 +91,7 @@ func initConfig() {
 
 		// Search config in home directory with name ".LASERdog" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
+		viper.SetConfigType("toml")
 		viper.SetConfigName(".LASERdog")
 	}
 
@@ -98,4 +101,12 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+// initLogger configures the Zap global loggers.
+func initLogger() {
+	loggerConfig := zap.NewDevelopmentConfig
+	loggerConfig.Level = zap.ParseAtomicLevel(viper.GetString("logging_level"))
+	logger := loggerConfig.Build()
+	zap.ReplaceGlobals(logger)
 }
